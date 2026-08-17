@@ -16,6 +16,7 @@ dashboard/              Tableau de bord Streamlit (revenu, prédiction, copilote
 gold/                   Tables agrégées, exportées en CSV (consultables sans rien lancer)
 dashboard.html          Tableau de bord HTML autonome (aucun serveur requis)
 data modeling/           Documentation de la modélisation (schéma en étoile, PDF)
+architecture/            Documentation de l'architecture globale (interopérabilité, PDF)
 NOTES.md                Question, chiffres clés, réponse, limites
 ```
 
@@ -96,3 +97,6 @@ matchs. Ouvrables directement dans Excel ou tout tableur.
 - `NOTES.md` — la question posée, les chiffres clés, la réponse, les limites.
 - `data modeling/Modelisation_star_schema.pdf` — détail du schéma en étoile
   et des décisions de modélisation.
+- `architecture/Architecture_Paris_Basketball.pdf` — vue d'ensemble de
+  l'architecture complète (interopérabilité des outils, cluster Spark,
+  orchestration, logs, modèle de prédiction, dashboards, copilote IA).
