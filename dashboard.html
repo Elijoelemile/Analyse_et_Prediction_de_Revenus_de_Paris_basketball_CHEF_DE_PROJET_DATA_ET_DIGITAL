@@ -261,6 +261,62 @@
   .model-note .stat b { font-size: 20px; font-weight: 800; display: block; }
   .model-note .stat span { font-size: 12.5px; color: var(--muted); }
   .model-note p { margin: 0; color: var(--ink-soft); font-size: 14px; max-width: 46ch; }
+  .model-note { margin-bottom: 22px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+
+  /* ---------- Prediction ---------- */
+  .predict-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .predict-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .predict-grid select {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 9px 10px;
+  }
+  .predict-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .predict-button {
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    padding: 12px 22px;
+    cursor: pointer;
+  }
+  .predict-button:hover { filter: brightness(1.08); }
+  .predict-button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+  .predict-hint { font-size: 13px; color: var(--muted); }
+  .predict-result {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 18px;
+  }
+  .predict-result .kpi .value.delta-pos { color: var(--accent-ink); }
+  .predict-result .kpi .value.delta-neg { color: var(--series-tickets); }
+  @media (max-width: 780px) {
+    .predict-grid { grid-template-columns: repeat(2, 1fr); }
+    .predict-result { grid-template-columns: 1fr; }
+  }
 
   footer {
     margin-top: 32px;
@@ -333,7 +389,7 @@
   </section>
 
   <section class="card">
-    <div class="card-head"><h2>Fiabilité du modèle de prédiction</h2></div>
+    <div class="card-head"><h2>Prédiction de revenu</h2></div>
     <div class="model-note">
       <div class="stat"><b>0,78</b><span>R² (validation LOO)</span></div>
       <div class="stat"><b>± 109 301 €</b><span>erreur moyenne (~21 %)</span></div>
@@ -344,6 +400,53 @@
         comparer des scénarios, pas comme un chiffre garanti (détail dans
         <code>NOTES.md</code>).
       </p>
+    </div>
+
+    <p class="predict-hint" style="margin:0 0 12px;">Choisis un adversaire pour Paris Basketball, ajuste le scénario si besoin, puis prédis.</p>
+    <div class="predict-grid">
+      <label>Adversaire
+        <select id="p-opponent"></select>
+      </label>
+      <label>Compétition
+        <select id="p-competition">
+          <option value="CHAMPIONNAT NATIONAL">Championnat National</option>
+          <option value="COUPE EUROPEENNE">Coupe Européenne</option>
+          <option value="PLAYOFFS CHAMPIONNAT">Playoffs Championnat</option>
+        </select>
+      </label>
+      <label>Lieu
+        <select id="p-venue">
+          <option value="ADIDAS ARENA">Adidas Arena</option>
+          <option value="ACCOR ARENA">Accor Arena</option>
+        </select>
+      </label>
+      <label>Mois
+        <select id="p-month"></select>
+      </label>
+      <label>Jour
+        <select id="p-weekend">
+          <option value="0">Semaine</option>
+          <option value="1">Week-end</option>
+        </select>
+      </label>
+    </div>
+    <div class="predict-actions">
+      <button id="predict-btn" class="predict-button" type="button">Prédire le revenu</button>
+    </div>
+
+    <div id="predict-result" class="predict-result" style="display:none;">
+      <div class="kpi">
+        <div class="label">Revenu prédit</div>
+        <div class="value" id="r-predicted"></div>
+      </div>
+      <div class="kpi">
+        <div class="label">Dernier match réel vs cet adversaire</div>
+        <div class="value small" id="r-actual"></div>
+      </div>
+      <div class="kpi">
+        <div class="label">Écart</div>
+        <div class="value" id="r-delta"></div>
+      </div>
     </div>
   </section>
 
@@ -517,6 +620,95 @@ MATCHES.forEach((m, i) => {
   });
   hit.addEventListener("mouseleave", () => { tooltip.style.opacity = 0; });
   svg.appendChild(hit);
+});
+
+// ---------- Prediction (regression Ridge reentrainee en JS, memes coefficients
+// que dashboard/data/model.joblib — voir ml/train_model.py) ----------
+const MODEL = {
+  intercept: 1151216.1135364315,
+  coefCoupeEuropeenne: 162960.84688827,
+  coefPlayoffs: 142848.17396381,
+  coefAdidasArena: -818625.3052641,
+  coefMonth: -3213.49205351,
+  coefWeekend: 62422.98421879,
+};
+
+function predictRevenue({ competition, venue, month, isWeekend }) {
+  let y = MODEL.intercept;
+  if (competition === "COUPE EUROPEENNE") y += MODEL.coefCoupeEuropeenne;
+  if (competition === "PLAYOFFS CHAMPIONNAT") y += MODEL.coefPlayoffs;
+  if (venue === "ADIDAS ARENA") y += MODEL.coefAdidasArena;
+  y += MODEL.coefMonth * month;
+  y += MODEL.coefWeekend * (isWeekend ? 1 : 0);
+  return y;
+}
+
+const MONTH_NAMES = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+
+// Dernier match connu par adversaire (MATCHES est deja trie chronologiquement)
+const opponentHistory = {};
+MATCHES.forEach(m => {
+  const opponent = m.match.split(" - ").slice(1).join(" - ");
+  const [yy, mm, dd] = m.date.split("-").map(Number);
+  const dow = new Date(yy, mm - 1, dd).getDay();
+  opponentHistory[opponent] = {
+    competition: m.comp,
+    venue: m.lieu,
+    month: mm,
+    isWeekend: dow === 0 || dow === 6,
+    total: m.total,
+    date: m.date,
+  };
+});
+const opponents = Object.keys(opponentHistory).sort((a, b) => a.localeCompare(b, "fr"));
+
+const selOpponent = document.getElementById("p-opponent");
+opponents.forEach(o => {
+  const opt = document.createElement("option");
+  opt.value = o; opt.textContent = o;
+  selOpponent.appendChild(opt);
+});
+
+const selMonth = document.getElementById("p-month");
+MONTH_NAMES.forEach((name, i) => {
+  const opt = document.createElement("option");
+  opt.value = i + 1; opt.textContent = name;
+  selMonth.appendChild(opt);
+});
+
+const selCompetition = document.getElementById("p-competition");
+const selVenue = document.getElementById("p-venue");
+const selWeekend = document.getElementById("p-weekend");
+
+function fillFromOpponent(opponent) {
+  const h = opponentHistory[opponent];
+  selCompetition.value = h.competition;
+  selVenue.value = h.venue;
+  selMonth.value = h.month;
+  selWeekend.value = h.isWeekend ? "1" : "0";
+}
+selOpponent.addEventListener("change", () => fillFromOpponent(selOpponent.value));
+selOpponent.value = opponents[0];
+fillFromOpponent(opponents[0]);
+
+document.getElementById("predict-btn").addEventListener("click", () => {
+  const opponent = selOpponent.value;
+  const actual = opponentHistory[opponent];
+  const prediction = predictRevenue({
+    competition: selCompetition.value,
+    venue: selVenue.value,
+    month: parseInt(selMonth.value, 10),
+    isWeekend: selWeekend.value === "1",
+  });
+  const delta = prediction - actual.total;
+
+  document.getElementById("r-predicted").textContent = fmtEUR(prediction);
+  document.getElementById("r-actual").textContent = `${fmtEUR(actual.total)} (${fmtDate(actual.date)})`;
+  const rDelta = document.getElementById("r-delta");
+  rDelta.textContent = (delta >= 0 ? "+" : "") + fmtEUR(delta);
+  rDelta.className = "value " + (delta >= 0 ? "delta-pos" : "delta-neg");
+
+  document.getElementById("predict-result").style.display = "grid";
 });
 </script>
 </body>
