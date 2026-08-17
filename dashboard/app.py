@@ -469,25 +469,40 @@ def render_prediction_tab():
 def render_copilot_tab():
     centered_title("Résumé")
 
-    col_left, col_right = st.columns(2)
+    # Boutons légèrement agrandis (texte + espace intérieur), scopé à ce
+    # conteneur via sa clé pour ne pas affecter les autres boutons de l'appli.
+    st.markdown(
+        """
+        <style>
+        .st-key-copilot_buttons button {
+            font-size: 1.15rem;
+            padding: 0.9rem 1.5rem;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    with col_left:
-        if st.button("Revenu par match", type="primary", width="stretch"):
-            context = st.session_state.get("revenue_summary_context")
-            if context is None:
-                st.warning("Ouvre d'abord l'onglet « Revenu par match ».")
-            else:
-                run_ai_summary(build_revenue_prompt(context))
+    with st.container(key="copilot_buttons"):
+        col_left, col_right = st.columns(2)
 
-    with col_right:
-        if st.button("Prédiction de revenu", type="primary", width="stretch"):
-            prediction = st.session_state.get("last_prediction")
-            if prediction is None:
-                st.warning(
-                    "Fais d'abord une prédiction dans l'onglet « Prédiction de revenu »."
-                )
-            else:
-                run_ai_summary(build_prediction_prompt(prediction))
+        with col_left:
+            if st.button("Revenu par match", type="primary", width="stretch"):
+                context = st.session_state.get("revenue_summary_context")
+                if context is None:
+                    st.warning("Ouvre d'abord l'onglet « Revenu par match ».")
+                else:
+                    run_ai_summary(build_revenue_prompt(context))
+
+        with col_right:
+            if st.button("Prédiction de revenu", type="primary", width="stretch"):
+                prediction = st.session_state.get("last_prediction")
+                if prediction is None:
+                    st.warning(
+                        "Fais d'abord une prédiction dans l'onglet « Prédiction de revenu »."
+                    )
+                else:
+                    run_ai_summary(build_prediction_prompt(prediction))
 
 
 tab_revenue, tab_prediction, tab_copilot = st.tabs(
