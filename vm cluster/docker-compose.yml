@@ -1,0 +1,37 @@
+services:
+  spark-master:
+    build: ./spark
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master",
+              "--host", "0.0.0.0", "--port", "7077", "--webui-port", "8080"]
+    ports:
+      - "8080:8080"   # UI web du cluster
+      - "7077:7077"   # port du cluster (spark-submit s'y connecte)
+
+  spark-worker:
+    build: ./spark
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker",
+              "spark://spark-master:7077", "--cores", "2", "--memory", "1G"]
+    environment:
+      - PBB_LOG_DIR=/app/logs
+    volumes:
+      - "..:/app"
+      - "C:/Users/Эли Жоэль/wetransfer_a_envoyer_au_candidat_2026-07-29_0843.zip:/data/wetransfer.zip:ro"
+    depends_on:
+      - spark-master
+
+  # Conteneur utilisé ponctuellement pour soumettre les jobs (spark-submit),
+  # pas démarré automatiquement par "docker compose up" (profil "submit").
+  # Exemple : docker compose run --rm spark-submit /opt/spark/bin/spark-submit
+  #             --master spark://spark-master:7077
+  #             --py-files /app/elt/extract.py,/app/config/logging_config.py,/app/config/sources_config.py
+  #             /app/elt/load.py
+  spark-submit:
+    build: ./spark
+    environment:
+      - PBB_LOG_DIR=/app/logs
+    volumes:
+      - "..:/app"
+      - "C:/Users/Эли Жоэль/wetransfer_a_envoyer_au_candidat_2026-07-29_0843.zip:/data/wetransfer.zip:ro"
+    depends_on:
+      - spark-master
+    profiles: ["submit"]

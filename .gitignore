@@ -1,5 +1,8 @@
 .venv/
 Data Lake/
+Staging/
+Data Warehouse/
 logs/
+log storage/
 __pycache__/
 *.pyc

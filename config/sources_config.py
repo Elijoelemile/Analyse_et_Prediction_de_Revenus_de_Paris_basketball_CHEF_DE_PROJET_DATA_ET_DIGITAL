@@ -1,8 +1,14 @@
 r"""Registre des sources de données pour la phase d'extraction.
 
 Chaque entrée décrit une source de données. `name` est le "nom principal"
-de la source — il sert à regrouper ses fichiers une fois extraits en
-mémoire (voir extract.py). Rien n'est écrit sur le disque à cette étape.
+de la source — il sert à regrouper ses fichiers une fois extraits (voir
+extract.py).
+
+Important : depuis le passage sur le cluster Spark (voir
+docker-compose.yml), extract.py et load.py s'exécutent DANS les
+conteneurs, pas sur Windows directement. Les chemins ci-dessous doivent
+donc être les chemins tels qu'ils apparaissent dans les conteneurs
+(définis par les volumes du docker-compose), pas les chemins Windows.
 
 Trois types de source sont supportés :
 
@@ -28,12 +34,12 @@ SOURCES = [
     {
         "name": "orders",
         "type": "path",
-        "pattern": r"C:\chemin\vers\ORDERS_*.json",   # n'importe quelle extension fonctionne
+        "pattern": "/app/data_externe/ORDERS_*.json",   # chemin monté dans le conteneur
     },
     {
         "name": "orders",
         "type": "zip",
-        "zip_path": r"C:\chemin\vers\archive.zip",
+        "zip_path": "/data/archive.zip",
         "internal_pattern": "dossier/sous_dossier/orders/*.json.gz",
     },
     {
@@ -50,19 +56,19 @@ SOURCES = [
     {
         "name": "orders",
         "type": "zip",
-        "zip_path": r"C:\Users\Эли Жоэль\wetransfer_a_envoyer_au_candidat_2026-07-29_0843.zip",
+        "zip_path": "/data/wetransfer.zip",
         "internal_pattern": "A_ENVOYER_AU_CANDIDAT/test_data_pbb/dataset/sftp/orders/*.json.gz",
     },
     {
         "name": "fb_transactions",
         "type": "zip",
-        "zip_path": r"C:\Users\Эли Жоэль\wetransfer_a_envoyer_au_candidat_2026-07-29_0843.zip",
+        "zip_path": "/data/wetransfer.zip",
         "internal_pattern": "A_ENVOYER_AU_CANDIDAT/test_data_pbb/dataset/fb_transactions.csv",
     },
     {
         "name": "boutique_ventes_avoirs",
         "type": "zip",
-        "zip_path": r"C:\Users\Эли Жоэль\wetransfer_a_envoyer_au_candidat_2026-07-29_0843.zip",
+        "zip_path": "/data/wetransfer.zip",
         "internal_pattern": "A_ENVOYER_AU_CANDIDAT/test_data_pbb/dataset/boutique_ventes_avoirs.csv",
     },
 ]
