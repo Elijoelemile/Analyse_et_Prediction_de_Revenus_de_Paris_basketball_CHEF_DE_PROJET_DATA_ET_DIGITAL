@@ -6,3 +6,4 @@ logs/
 log storage/
 __pycache__/
 *.pyc
+.streamlit/secrets.toml

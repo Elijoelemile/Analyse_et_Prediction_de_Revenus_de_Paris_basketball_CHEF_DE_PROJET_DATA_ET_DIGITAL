@@ -5,3 +5,4 @@ streamlit==1.61.1
 plotly==6.9.0
 scikit-learn==1.9.0
 joblib==1.5.3
+mistralai==2.9.3

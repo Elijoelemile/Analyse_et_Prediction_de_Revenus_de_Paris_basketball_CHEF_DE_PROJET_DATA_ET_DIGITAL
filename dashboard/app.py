@@ -26,6 +26,12 @@ Le revenu boutique n'est volontairement pas inclus (ni dans le premier
 onglet, ni comme feature du modèle) : boutique_ventes_avoirs n'a pas de
 référence directe à un match dans les données sources.
 
+Chaque onglet a un "Copilote IA" : un bouton qui envoie un résumé des
+chiffres affichés à l'API Mistral et affiche la réponse en langage
+naturel. Nécessite une clé API dans .streamlit/secrets.toml (voir
+secrets.toml.example) — en son absence, le bouton affiche un message
+explicite plutôt que de planter.
+
 Utilisation :
     streamlit run app.py
 """
@@ -35,6 +41,7 @@ import joblib
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+from mistralai.client import Mistral
 
 APP_DIR = Path(__file__).resolve().parent
 WAREHOUSE_LIVE = APP_DIR.parent / "Data Warehouse" / "Rev Paris Basketball"
@@ -114,6 +121,47 @@ def load_model():
 @st.cache_data
 def load_prediction_history():
     return pd.read_parquet(WAREHOUSE_SNAPSHOT / "match_history.parquet")
+
+
+def get_mistral_client():
+    """Renvoie un client Mistral si une clé API est configurée dans
+    .streamlit/secrets.toml, sinon None (pas d'exception : le bouton
+    Copilote IA gère ce cas en affichant un message). st.secrets lève une
+    erreur (pas juste une absence de clé) si le fichier secrets.toml
+    n'existe pas du tout, ce qui est le cas tant que la clé n'a pas été
+    ajoutée — d'où le try/except plutôt qu'un simple .get()."""
+    try:
+        api_key = st.secrets.get("MISTRAL_API_KEY")
+    except Exception:
+        return None
+    if not api_key:
+        return None
+    return Mistral(api_key=api_key)
+
+
+def render_ai_copilot(button_label, build_prompt):
+    """Bouton 'Copilote IA' générique : au clic, construit le prompt (via
+    build_prompt, un callable sans argument) et affiche le résumé renvoyé
+    par l'API Mistral."""
+    st.markdown("#### 🤖 Copilote IA")
+    if st.button(button_label, type="primary", width="stretch"):
+        client = get_mistral_client()
+        if client is None:
+            st.warning(
+                "Clé API Mistral non configurée. Ajoute `MISTRAL_API_KEY` dans "
+                "`.streamlit/secrets.toml` (voir `secrets.toml.example`) en local, "
+                "ou dans les *Secrets* de l'appli sur Streamlit Cloud."
+            )
+            return
+        with st.spinner("Génération du résumé..."):
+            try:
+                response = client.chat.complete(
+                    model="mistral-small-latest",
+                    messages=[{"role": "user", "content": build_prompt()}],
+                )
+                st.info(response.choices[0].message.content)
+            except Exception as e:
+                st.error(f"Erreur lors de l'appel à l'API Mistral : {e}")
 
 
 def render_revenue_tab():
@@ -227,6 +275,26 @@ def render_revenue_tab():
         "match dans les données sources — il n'est donc pas inclus dans ce tableau "
         "de bord pour ne pas fausser le revenu par match."
     )
+
+    # ---------- Copilote IA ----------
+    def build_revenue_prompt():
+        worst_match = filtered.loc[filtered["revenu_total"].idxmin()]
+        periode = f"du {date_range[0].strftime('%d/%m/%Y')} au {date_range[1].strftime('%d/%m/%Y')}" \
+            if len(date_range) == 2 else "sur toute la saison"
+        return (
+            "Tu es analyste pour le club de basketball Paris Basketball. Voici les "
+            f"chiffres de revenu (billetterie + buvette) pour {len(filtered)} match(s), "
+            f"compétitions {', '.join(selected_competitions)}, {periode} :\n"
+            f"- Revenu total : {total_revenue:,.0f} €\n"
+            f"- Revenu moyen par match : {filtered['revenu_total'].mean():,.0f} €\n"
+            f"- Meilleur match : {best_match['name']} ({best_match['revenu_total']:,.0f} €)\n"
+            f"- Moins bon match : {worst_match['name']} ({worst_match['revenu_total']:,.0f} €)\n"
+            f"- Taux de remplissage moyen : {filtered['taux_remplissage'].mean():.0f}%\n\n"
+            "Rédige un résumé court (4-5 phrases), en français, clair et concret, "
+            "pour un dirigeant du club qui n'a pas le temps de lire le tableau détaillé."
+        )
+
+    render_ai_copilot("Revenu par match", build_revenue_prompt)
 
 
 def render_prediction_tab():
@@ -343,6 +411,40 @@ def render_prediction_tab():
         st.caption(
             f"Marge d'erreur typique du modèle : ± {metrics['mae']:,.0f} €".replace(",", " ")
         )
+
+        # Mémorisé pour que le Copilote IA (ci-dessous) puisse s'en servir
+        # même après le rerun déclenché par son propre bouton.
+        st.session_state["last_prediction"] = {
+            "opponent": selected_opponent, "competition": competition, "venue": venue,
+            "month": MONTH_NAMES_FR[month], "is_weekend": is_weekend,
+            "prediction": prediction, "last_actual": last_match["revenu_total"],
+        }
+
+    # ---------- Copilote IA ----------
+    def build_prediction_prompt():
+        p = st.session_state["last_prediction"]
+        return (
+            "Tu es analyste pour le club de basketball Paris Basketball. Voici un "
+            "scénario de match simulé et sa prédiction de revenu (billetterie + buvette) :\n"
+            f"- Adversaire : {p['opponent']}\n"
+            f"- Compétition : {p['competition']}\n"
+            f"- Lieu : {p['venue']}\n"
+            f"- Mois : {p['month']}\n"
+            f"- Jour : {'week-end' if p['is_weekend'] else 'semaine'}\n"
+            f"- Revenu prédit : {p['prediction']:,.0f} €\n"
+            f"- Dernier revenu réel contre cet adversaire : {p['last_actual']:,.0f} €\n"
+            f"- Marge d'erreur typique du modèle : ± {metrics['mae']:,.0f} € "
+            f"(modèle entraîné sur seulement {metrics['n_matches']} matchs)\n\n"
+            "Rédige un résumé court (3-4 phrases), en français, expliquant ce que "
+            "cette prédiction signifie concrètement, avec la nuance nécessaire sur "
+            "la fiabilité du modèle vu le peu de données d'entraînement."
+        )
+
+    if "last_prediction" in st.session_state:
+        render_ai_copilot("Prédiction de revenu", build_prediction_prompt)
+    else:
+        st.markdown("#### 🤖 Copilote IA")
+        st.caption("Fais d'abord une prédiction (étape 3 ci-dessus) pour pouvoir la résumer.")
 
 
 tab_revenue, tab_prediction = st.tabs(["📊 Revenu par match", "🔮 Prédiction de revenu"])
