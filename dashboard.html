@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Revenu par match — Paris Basketball</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink:            #171310;
+    --ink-soft:       #5e5348;
+    --muted:          #8c8175;
+    --surface:        #faf8f4;
+    --page:           #f3efe7;
+    --card:           #ffffff;
+    --line:           #e6e0d5;
+    --accent:         #eb6834;
+    --accent-soft:    #fbe4d8;
+    --accent-ink:     #b5461c;
+    --series-tickets: #2a78d6;
+    --series-tickets-soft: #dce9fa;
+    --series-bar:     #eb6834;
+    --shadow: 0 1px 2px rgba(23,19,16,0.04), 0 8px 24px -12px rgba(23,19,16,0.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ink:            #f4f0e9;
+      --ink-soft:       #c7bcae;
+      --muted:          #948a7c;
+      --surface:        #18140f;
+      --page:           #100d0a;
+      --card:           #221d16;
+      --line:           #352e23;
+      --accent:         #ff8a52;
+      --accent-soft:    #402515;
+      --accent-ink:     #ffb590;
+      --series-tickets: #6fa8ea;
+      --series-tickets-soft: #22364a;
+      --series-bar:     #ff8a52;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ink:            #f4f0e9;
+    --ink-soft:       #c7bcae;
+    --muted:          #948a7c;
+    --surface:        #18140f;
+    --page:           #100d0a;
+    --card:           #221d16;
+    --line:           #352e23;
+    --accent:         #ff8a52;
+    --accent-soft:    #402515;
+    --accent-ink:     #ffb590;
+    --series-tickets: #6fa8ea;
+    --series-tickets-soft: #22364a;
+    --series-bar:     #ff8a52;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 48px 28px 80px;
+  }
+
+  /* ---------- Header ---------- */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    padding: 5px 12px;
+    border-radius: 999px;
+  }
+  h1 {
+    font-size: clamp(32px, 4.4vw, 46px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 16px 0 8px;
+    text-wrap: balance;
+  }
+  .subtitle {
+    font-size: 16px;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    margin: 0;
+  }
+  .subtitle b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- KPI row ---------- */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin: 36px 0;
+  }
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+  }
+  .kpi .label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .kpi .value {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi .value.small { font-size: 18px; line-height: 1.3; }
+  .kpi .sub {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Section shell ---------- */
+  section.card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px 26px 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .card-head h2 {
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .card-head .legend {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .legend .key {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend .swatch {
+    width: 10px; height: 10px;
+    border-radius: 3px;
+  }
+
+  /* ---------- Chart ---------- */
+  .chart-scroll { overflow-x: auto; }
+  #chart { display: block; }
+  .bar-tickets, .bar-buvette { cursor: pointer; }
+  .bar-tickets { fill: var(--series-tickets); }
+  .bar-buvette { fill: var(--series-bar); }
+  .gridline { stroke: var(--line); stroke-width: 1; }
+  .axis-label { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+  #tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: var(--ink);
+    color: var(--surface);
+    font-size: 12.5px;
+    padding: 8px 11px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    transform: translate(-50%, -110%);
+    transition: opacity 0.08s ease;
+    z-index: 10;
+    white-space: nowrap;
+  }
+  #tooltip .t-match { font-weight: 700; margin-bottom: 3px; }
+  #tooltip .t-row { display: flex; justify-content: space-between; gap: 14px; font-variant-numeric: tabular-nums; }
+
+  /* ---------- Table ---------- */
+  .table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    min-width: 760px;
+  }
+  thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    text-align: left;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-soft);
+  }
+  tbody td.match { color: var(--ink); font-weight: 600; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--surface); }
+  .pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+  }
+  .tbody-scroll { max-height: 420px; overflow-y: auto; }
+
+  /* ---------- Model note ---------- */
+  .model-note {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .model-note .stat { font-variant-numeric: tabular-nums; }
+  .model-note .stat b { font-size: 20px; font-weight: 800; display: block; }
+  .model-note .stat span { font-size: 12.5px; color: var(--muted); }
+  .model-note p { margin: 0; color: var(--ink-soft); font-size: 14px; max-width: 46ch; }
+
+  footer {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  code {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-size: 12px;
+  }
+
+  @media (max-width: 780px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="eyebrow">🏀 Paris Basketball · Saison 2025-2026</span>
+  <h1>Revenu par match</h1>
+  <p class="subtitle">
+    Billetterie + buvette, <b>41 matchs</b> à domicile. Généré le
+    <b>17/08/2026</b> à partir du Data Warehouse du pipeline
+    (<code>gold/revenu_par_match.csv</code>) — page autonome, aucune donnée
+    n'est rechargée en direct.
+  </p>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="label">Revenu total</div>
+      <div class="value">21 094 901 €</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Matchs</div>
+      <div class="value">41</div>
+      <div class="sub">saison complète</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Revenu moyen / match</div>
+      <div class="value">514 510 €</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Meilleur match</div>
+      <div class="value small">PBB - Olympiacos Piraeus</div>
+      <div class="sub">1 549 068 €</div>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Revenu par match, chronologique</h2>
+      <div class="legend">
+        <span class="key"><span class="swatch" style="background:var(--series-tickets)"></span>Billetterie</span>
+        <span class="key"><span class="swatch" style="background:var(--series-bar)"></span>Buvette</span>
+      </div>
+    </div>
+    <div class="chart-scroll">
+      <svg id="chart" width="1120" height="360"></svg>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Fiabilité du modèle de prédiction</h2></div>
+    <div class="model-note">
+      <div class="stat"><b>0,78</b><span>R² (validation LOO)</span></div>
+      <div class="stat"><b>± 109 301 €</b><span>erreur moyenne (~21 %)</span></div>
+      <div class="stat"><b>41</b><span>matchs d'entraînement</span></div>
+      <p>
+        Régression Ridge sur compétition, lieu, mois et jour de semaine —
+        volontairement simple vu le faible nombre de matchs. À utiliser pour
+        comparer des scénarios, pas comme un chiffre garanti (détail dans
+        <code>NOTES.md</code>).
+      </p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Détail des 41 matchs</h2>
+      <span class="pill">triable dans gold/revenu_par_match.csv</span>
+    </div>
+    <div class="table-scroll">
+      <div class="tbody-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Match</th>
+              <th>Compétition</th>
+              <th>Lieu</th>
+              <th class="num">Billetterie</th>
+              <th class="num">Buvette</th>
+              <th class="num">Total</th>
+              <th class="num">Remplissage</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Source : pipeline ELT Spark → schéma en étoile → <code>gold/</code>. Voir <code>README.md</code> et <code>data modeling/</code>.</span>
+    <span>Paris Basketball — usage interne</span>
+  </footer>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+// Données figées, exportées de gold/revenu_par_match.csv le 17/08/2026.
+const MATCHES = [
+  {date:"2025-10-09", match:"PBB - Virtus Bologna", comp:"COUPE EUROPEENNE", lieu:"ADIDAS ARENA", billetterie:334982.48, buvette:30901.0, total:365883.48, remplissage:66.4},
+  {date:"2025-10-12", match:"PBB - Monaco", comp:"CHAMPIONNAT NATIONAL", lieu:"ADIDAS ARENA", billetterie:388227.31, buvette:43103.5, total:431330.81, remplissage:86.0},
+  {date:"2025-10-15", match:"PBB - Kosner Baskonia Vitoria-Gasteiz", comp:"COUPE EUROPEENNE", lieu:"ADIDAS ARENA", billetterie:352815.95, buvette:31165.5, total:383981.45, remplissage:70.8},
+  {date:"2025-10-17", match:"PBB - Hapoel Shlomo Tel Aviv", comp:"COUPE EUROPEENNE", lieu:"ADIDAS ARENA", billetterie:550556.58, buvette:40830.5, total:591387.08, remplissage:97.2},
+  {date:"2025-10-19", match:"PBB - Dijon", comp:"CHAMPIONNAT NATIONAL", lieu:"ADIDAS ARENA", billetterie:133928.0, buvette:20199.5, total:154127.5, remplissage:41.5},
+  {date:"2025-10-28", match:"PBB - Anadolu Efes Istanbul", comp:"COUPE EUROPEENNE", lieu:"ADIDAS ARENA", billetterie:340565.87, buvette:33266.5, total:373832.37, remplissage:76.3},
+  {date:"2025-11-06", match:"PBB - FC Bayern Munich", comp:"COUPE EUROPEENNE", lieu:"ADIDAS ARENA", billetterie:400241.38, buvette:37671.5, total:437912.88, remplissage:81.2},
+  {date:"2025-11-09", match:"PBB - Limoges", comp:"CHAMPIONNAT NATIONAL", lieu:"ADIDAS ARENA", billetterie:296681.54, buvette:33631.0, total:330312.54, remplissage:76.1},
+  {date:"2025-11-11", match:"PBB - Panathinaikos AKTOR Athens", comp:"COUPE EUROPEENNE", lieu:"ADIDAS ARENA", billetterie:413832.07, buvette:35723.5, total:449555.57, remplissage:76.7},
+  {date:"2025-11-13", match:"PBB - Valencia Basket", comp:"COUPE EUROPEENNE", lieu:"ADIDAS ARENA", billetterie:473076.11, buvette:39722.5, total:512798.61, remplissage:87.3},
+  {date:"2025-12-07", match:"PBB - Saint-Quentin", comp:"CHAMPIONNAT NATIONAL", lieu:"ADIDAS ARENA", billetterie:229045.48, buvette:25759.0, total:254804.48, remplissage:54.9},
+  {date:"2025-12-09", match:"PBB - Le Portel", comp:"CHAMPIONNAT NATIONAL", lieu:"ADIDAS ARENA", billetterie:213328.36, buvette:25031.5, total:238359.86, remplissage:62.1},
+  {date:"2025-12-11", match:"PBB - Zalgiris Kaunas", comp:"COUPE EUROPEENNE", lieu:"ADIDAS ARENA", billetterie:493525.45, buvette:49966.5, total:543491.95, remplissage:97.0},
+  {date:"2025-12-16", match:"PBB - FC Barcelona", comp:"COUPE EUROPEENNE", lieu:"ADIDAS ARENA", billetterie:577587.71, buvette:37554.0, total:615141.71, remplissage:96.0},
+  {date:"2025-12-21", match:"PBB - Cholet", comp:"CHAMPIONNAT NATIONAL", lieu:"ADIDAS ARENA", billetterie:317787.34, buvette:37462.5, total:355249.84, remplissage:83.8},
+  {date:"2025-12-23", match:"PBB - Crvena Zvezda Meridianbet Belgrade", comp:"COUPE EUROPEENNE", lieu:"ADIDAS ARENA", billetterie:474051.46, buvette:35367.0, total:509418.46, remplissage:84.2},
+  {date:"2026-01-13", match:"PBB - Strasbourg", comp:"CHAMPIONNAT NATIONAL", lieu:"ADIDAS ARENA", billetterie:302950.74, buvette:32490.0, total:335440.74, remplissage:76.3},
+  {date:"2026-01-15", match:"PBB - AS Monaco", comp:"COUPE EUROPEENNE", lieu:"ACCOR ARENA", billetterie:1047382.12, buvette:76381.5, total:1123763.62, remplissage:95.9},
+  {date:"2026-01-18", match:"PBB - Le Mans", comp:"CHAMPIONNAT NATIONAL", lieu:"ADIDAS ARENA", billetterie:503687.04, buvette:38716.5, total:542403.54, remplissage:88.7},
+  {date:"2026-01-22", match:"PBB - Dubai Basketball", comp:"COUPE EUROPEENNE", lieu:"ADIDAS ARENA", billetterie:425033.06, buvette:32060.0, total:457093.06, remplissage:87.4},
+  {date:"2026-01-27", match:"PBB - Real Madrid", comp:"COUPE EUROPEENNE", lieu:"ACCOR ARENA", billetterie:1041675.48, buvette:81459.0, total:1123134.48, remplissage:94.8},
+  {date:"2026-02-01", match:"PBB - Boulazac", comp:"CHAMPIONNAT NATIONAL", lieu:"ADIDAS ARENA", billetterie:347122.95, buvette:31209.0, total:378331.95, remplissage:72.6},
+  {date:"2026-02-05", match:"PBB - Fenerbahce Beko Istanbul", comp:"COUPE EUROPEENNE", lieu:"ACCOR ARENA", billetterie:1442794.14, buvette:84081.0, total:1526875.14, remplissage:95.1},
+  {date:"2026-02-07", match:"PBB - Nancy", comp:"CHAMPIONNAT NATIONAL", lieu:"ADIDAS ARENA", billetterie:340668.12, buvette:41805.0, total:382473.12, remplissage:90.7},
+  {date:"2026-03-10", match:"PBB - Olympiacos Piraeus", comp:"COUPE EUROPEENNE", lieu:"ACCOR ARENA", billetterie:1475880.04, buvette:73187.5, total:1549067.54, remplissage:94.3},
+  {date:"2026-03-12", match:"PBB - LDLC ASVEL Villeurbanne", comp:"COUPE EUROPEENNE", lieu:"ADIDAS ARENA", billetterie:235009.07, buvette:27540.5, total:262549.57, remplissage:57.3},
+  {date:"2026-03-15", match:"PBB - Gravelines-Dunkerque", comp:"CHAMPIONNAT NATIONAL", lieu:"ADIDAS ARENA", billetterie:290153.48, buvette:42632.5, total:332785.98, remplissage:77.0},
+  {date:"2026-03-19", match:"PBB - Partizan Mozzart Bet Belgrade", comp:"COUPE EUROPEENNE", lieu:"ADIDAS ARENA", billetterie:382945.51, buvette:39460.5, total:422406.01, remplissage:88.4},
+  {date:"2026-03-22", match:"PBB - Bourg-en-Bresse", comp:"CHAMPIONNAT NATIONAL", lieu:"ADIDAS ARENA", billetterie:483844.15, buvette:42775.5, total:526619.65, remplissage:89.8},
+  {date:"2026-04-02", match:"PBB - EA7 Emporio Armani Milan", comp:"COUPE EUROPEENNE", lieu:"ADIDAS ARENA", billetterie:525360.87, buvette:37728.0, total:563088.87, remplissage:79.6},
+  {date:"2026-04-04", match:"PBB - Nanterre", comp:"CHAMPIONNAT NATIONAL", lieu:"ADIDAS ARENA", billetterie:355657.81, buvette:42740.5, total:398398.31, remplissage:89.0},
+  {date:"2026-04-09", match:"PBB - Maccabi Rapyd Tel Aviv", comp:"COUPE EUROPEENNE", lieu:"ADIDAS ARENA", billetterie:440814.6, buvette:34461.5, total:475276.1, remplissage:79.1},
+  {date:"2026-05-02", match:"PBB - Chalon/Saône", comp:"CHAMPIONNAT NATIONAL", lieu:"ADIDAS ARENA", billetterie:289965.35, buvette:34977.5, total:324942.85, remplissage:76.4},
+  {date:"2026-05-16", match:"PBB - Lyon-Villeurbanne", comp:"CHAMPIONNAT NATIONAL", lieu:"ADIDAS ARENA", billetterie:437782.98, buvette:45034.0, total:482816.98, remplissage:79.8},
+  {date:"2026-05-26", match:"PBB - Strasbourg", comp:"PLAYOFFS CHAMPIONNAT", lieu:"ADIDAS ARENA", billetterie:336689.85, buvette:27855.0, total:364544.85, remplissage:73.8},
+  {date:"2026-05-30", match:"PBB - Strasbourg", comp:"PLAYOFFS CHAMPIONNAT", lieu:"ADIDAS ARENA", billetterie:327695.55, buvette:46411.0, total:374106.55, remplissage:76.0},
+  {date:"2026-06-02", match:"PBB - Cholet", comp:"PLAYOFFS CHAMPIONNAT", lieu:"ADIDAS ARENA", billetterie:535889.89, buvette:33455.5, total:569345.39, remplissage:94.2},
+  {date:"2026-06-04", match:"PBB - Cholet", comp:"PLAYOFFS CHAMPIONNAT", lieu:"ADIDAS ARENA", billetterie:330624.21, buvette:30968.0, total:361592.21, remplissage:81.8},
+  {date:"2026-06-14", match:"PBB - Monaco", comp:"PLAYOFFS CHAMPIONNAT", lieu:"ADIDAS ARENA", billetterie:601907.0, buvette:54622.5, total:656529.5, remplissage:96.1},
+  {date:"2026-06-17", match:"PBB - Monaco", comp:"PLAYOFFS CHAMPIONNAT", lieu:"ADIDAS ARENA", billetterie:510655.31, buvette:34567.0, total:545222.31, remplissage:96.1},
+  {date:"2026-06-23", match:"PBB - Monaco", comp:"PLAYOFFS CHAMPIONNAT", lieu:"ADIDAS ARENA", billetterie:434719.62, buvette:33784.0, total:468503.62, remplissage:96.0}
+];
+
+const fmtEUR = n => n.toLocaleString("fr-FR", {maximumFractionDigits: 0}) + " €";
+const fmtDate = d => { const [y,m,day] = d.split("-"); return `${day}/${m}/${y}`; };
+
+// ---------- Tableau ----------
+const tbody = document.getElementById("table-body");
+MATCHES.forEach(m => {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${fmtDate(m.date)}</td>
+    <td class="match">${m.match}</td>
+    <td>${m.comp.charAt(0) + m.comp.slice(1).toLowerCase()}</td>
+    <td>${m.lieu.charAt(0) + m.lieu.slice(1).toLowerCase()}</td>
+    <td class="num">${fmtEUR(m.billetterie)}</td>
+    <td class="num">${fmtEUR(m.buvette)}</td>
+    <td class="num">${fmtEUR(m.total)}</td>
+    <td class="num">${m.remplissage.toFixed(0)} %</td>
+  `;
+  tbody.appendChild(tr);
+});
+
+// ---------- Graphique (SVG genere depuis les donnees) ----------
+const svg = document.getElementById("chart");
+const svgNS = "http://www.w3.org/2000/svg";
+const W = 1120, H = 360;
+const padL = 56, padR = 12, padT = 12, padB = 12;
+const plotW = W - padL - padR, plotH = H - padT - padB;
+
+const maxTotal = Math.max(...MATCHES.map(m => m.total));
+const yMax = Math.ceil(maxTotal / 250000) * 250000;
+const slot = plotW / MATCHES.length;
+const barW = Math.max(6, Math.min(20, slot - 3));
+
+function y(v) { return padT + plotH - (v / yMax) * plotH; }
+
+// gridlines + labels
+for (let v = 0; v <= yMax; v += 500000) {
+  const gy = y(v);
+  const line = document.createElementNS(svgNS, "line");
+  line.setAttribute("x1", padL); line.setAttribute("x2", W - padR);
+  line.setAttribute("y1", gy); line.setAttribute("y2", gy);
+  line.setAttribute("class", "gridline");
+  svg.appendChild(line);
+
+  const label = document.createElementNS(svgNS, "text");
+  label.setAttribute("x", padL - 8); label.setAttribute("y", gy + 4);
+  label.setAttribute("text-anchor", "end");
+  label.setAttribute("class", "axis-label");
+  label.textContent = v === 0 ? "0" : (v / 1000000).toFixed(v % 1000000 === 0 ? 0 : 1) + "M€";
+  svg.appendChild(label);
+}
+
+const tooltip = document.getElementById("tooltip");
+
+MATCHES.forEach((m, i) => {
+  const x = padL + i * slot + (slot - barW) / 2;
+  const yTickets = y(m.billetterie);
+  const hTickets = padT + plotH - yTickets;
+  const yBuvette = y(m.total);
+  const hBuvette = yTickets - yBuvette;
+
+  const rTickets = document.createElementNS(svgNS, "rect");
+  rTickets.setAttribute("x", x); rTickets.setAttribute("y", yTickets);
+  rTickets.setAttribute("width", barW); rTickets.setAttribute("height", Math.max(0, hTickets));
+  rTickets.setAttribute("class", "bar-tickets");
+  svg.appendChild(rTickets);
+
+  const rBuvette = document.createElementNS(svgNS, "rect");
+  rBuvette.setAttribute("x", x); rBuvette.setAttribute("y", yBuvette);
+  rBuvette.setAttribute("width", barW); rBuvette.setAttribute("height", Math.max(0, hBuvette - 2));
+  rBuvette.setAttribute("class", "bar-buvette");
+  svg.appendChild(rBuvette);
+
+  const hit = document.createElementNS(svgNS, "rect");
+  hit.setAttribute("x", padL + i * slot); hit.setAttribute("y", padT);
+  hit.setAttribute("width", slot); hit.setAttribute("height", plotH);
+  hit.setAttribute("fill", "transparent");
+  hit.addEventListener("mousemove", (e) => {
+    tooltip.style.left = e.clientX + "px";
+    tooltip.style.top = e.clientY + "px";
+    tooltip.style.opacity = 1;
+    tooltip.innerHTML = `
+      <div class="t-match">${m.match}</div>
+      <div class="t-row"><span>${fmtDate(m.date)}</span></div>
+      <div class="t-row"><span>Billetterie</span><span>${fmtEUR(m.billetterie)}</span></div>
+      <div class="t-row"><span>Buvette</span><span>${fmtEUR(m.buvette)}</span></div>
+      <div class="t-row"><b>Total</b><b>${fmtEUR(m.total)}</b></div>
+    `;
+  });
+  hit.addEventListener("mouseleave", () => { tooltip.style.opacity = 0; });
+  svg.appendChild(hit);
+});
+</script>
+</body>
+</html>
