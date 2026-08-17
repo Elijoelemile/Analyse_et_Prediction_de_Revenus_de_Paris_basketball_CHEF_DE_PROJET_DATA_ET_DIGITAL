@@ -19,10 +19,11 @@ volontairement simple et évalué par validation croisée leave-one-out
 chacun — plutôt qu'un split train/test qui gaspillerait des données déjà
 rares.
 
-Écrit :
-- dashboard-prediction/model.joblib — le pipeline entraîné (préprocesseur + modèle)
-- dashboard-prediction/metrics.joblib — MAE/R² de la validation croisée
-- dashboard-prediction/data/match_history.parquet — historique des 41 matchs
+Écrit (dans dashboard/, le tableau de bord Streamlit unique qui réunit
+revenu par match et prédiction) :
+- dashboard/data/model.joblib — le pipeline entraîné (préprocesseur + modèle)
+- dashboard/data/metrics.joblib — MAE/R² de la validation croisée
+- dashboard/data/match_history.parquet — historique des 41 matchs
   (adversaire, compétition, mois, jour de semaine, lieu, revenu réel)
 
 Utilisation :
@@ -42,7 +43,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 WAREHOUSE = PROJECT_DIR / "Data Warehouse" / "Rev Paris Basketball"
-OUTPUT_DIR = PROJECT_DIR / "dashboard-prediction"
+OUTPUT_DIR = PROJECT_DIR / "dashboard" / "data"
 
 FEATURES_CATEGORICAL = ["competition_name", "venue_name"]
 FEATURES_NUMERIC = ["month", "is_weekend"]
@@ -108,19 +109,17 @@ def main():
     # ne sert qu'à estimer l'erreur, pas à produire le modèle livré).
     pipeline.fit(X, y)
 
-    OUTPUT_DIR.mkdir(exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump(pipeline, OUTPUT_DIR / "model.joblib")
     joblib.dump({"mae": mae, "r2": r2, "n_matches": len(history)}, OUTPUT_DIR / "metrics.joblib")
 
-    data_dir = OUTPUT_DIR / "data"
-    data_dir.mkdir(exist_ok=True)
     history[[
         "session_id", "name", "opponent", "match_date", "competition_name",
         "venue_name", "month", "day_of_week", "is_weekend", "revenu_total",
-    ]].to_parquet(data_dir / "match_history.parquet", index=False)
+    ]].to_parquet(OUTPUT_DIR / "match_history.parquet", index=False)
 
     print(f"\nModèle -> {OUTPUT_DIR / 'model.joblib'}")
-    print(f"Historique -> {data_dir / 'match_history.parquet'}")
+    print(f"Historique -> {OUTPUT_DIR / 'match_history.parquet'}")
 
 
 if __name__ == "__main__":
