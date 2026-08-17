@@ -1,0 +1,5 @@
+.venv/
+Data Lake/
+logs/
+__pycache__/
+*.pyc
