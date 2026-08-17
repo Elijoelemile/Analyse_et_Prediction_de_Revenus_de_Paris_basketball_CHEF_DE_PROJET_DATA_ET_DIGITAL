@@ -69,9 +69,9 @@ with st.expander("Fiabilité du modèle", expanded=False):
     )
 
 # ---------- Sélection de l'adversaire ----------
-st.subheader("1. Choisir un adversaire")
+st.subheader("1. Choisir un adversaire pour Paris Basketball")
 opponents = sorted(history["opponent"].unique())
-selected_opponent = st.selectbox("Adversaire (déjà affronté cette saison)", opponents)
+selected_opponent = st.selectbox("Choisis un adversaire pour Paris Basketball", opponents)
 
 opponent_matches = history[history["opponent"] == selected_opponent].sort_values("match_date")
 last_match = opponent_matches.iloc[-1]
