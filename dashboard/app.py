@@ -75,7 +75,7 @@ def build_match_table(billetterie, buvette, matchs):
         table[["revenu_billetterie", "revenu_buvette", "nb_billets"]].fillna(0)
     )
     table["revenu_total"] = table["revenu_billetterie"] + table["revenu_buvette"]
-    table["taux_remplissage"] = table["nb_billets"] / table["venue_capacity"]
+    table["taux_remplissage"] = table["nb_billets"] / table["venue_capacity"] * 100
     table["match_date"] = pd.to_datetime(table["match_date"])
     return table.sort_values("match_date")
 
@@ -173,7 +173,7 @@ st.dataframe(
         "Billetterie (€)": st.column_config.NumberColumn(format="%.0f €"),
         "Buvette (€)": st.column_config.NumberColumn(format="%.0f €"),
         "Total (€)": st.column_config.NumberColumn(format="%.0f €"),
-        "Taux de remplissage": st.column_config.ProgressColumn(min_value=0, max_value=1, format="%.0f%%"),
+        "Taux de remplissage": st.column_config.ProgressColumn(min_value=0, max_value=100, format="%.0f%%"),
     },
 )
 
